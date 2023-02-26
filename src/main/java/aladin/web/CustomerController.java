@@ -42,6 +42,7 @@ public class CustomerController {
 		return customerRepository.findById(id).log();
 	}
 	
+	//23.02.26 25:01
 	/* SSE EVENT로 응답을 준다. mediaType TEXT_EVENT_STREAM_VALUE */
 	@GetMapping(value="/customer/sse", produces=MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<Customer> findAllSSE() {
