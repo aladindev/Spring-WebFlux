@@ -3,8 +3,10 @@ package aladin.web;
 import java.time.Duration;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -12,14 +14,24 @@ import aladin.accessingdatar2dbc.Customer;
 import aladin.accessingdatar2dbc.CustomerRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 @RestController
 public class CustomerController {
 	
 	private final CustomerRepository customerRepository;
+	private final Sinks.Many<Customer> sink;
 	
+	
+	/**
+	 * A요청 -> Flux -> Stream
+	 * B요청 -> Flux -> Stream
+	 *   -> Flux.merge -> Sink
+	 * */
 	public CustomerController(CustomerRepository customerRepository) {
 		this.customerRepository = customerRepository;
+		// 모든 클라이언트들이 이 싱크에 접근할 수 있음.
+		sink = Sinks.many().multicast().onBackpressureBuffer(); // 새로 푸쉬된 데이터만 구독자에게 전달한다.
 	}
 
 	@GetMapping("/customer")
@@ -44,10 +56,20 @@ public class CustomerController {
 	
 	//23.02.26 25:01
 	/* SSE EVENT로 응답을 준다. mediaType TEXT_EVENT_STREAM_VALUE */
-	@GetMapping(value="/customer/sse", produces=MediaType.TEXT_EVENT_STREAM_VALUE)
-	public Flux<Customer> findAllSSE() {
-		return customerRepository.findAll();
+	@GetMapping(value="/customer/sse", produces=MediaType.TEXT_EVENT_STREAM_VALUE) // produces=MediaType.TEXT_EVENT_STREAM_VALUE 생략가
+	public Flux<ServerSentEvent<Customer>> findAllSSE() {
+		//return customerRepository.findAll();
+		return sink.asFlux().map(c-> ServerSentEvent.builder(c).build()).doOnCancel(() -> {
+			sink.asFlux().blockLast();
+		});
 		
+	}
+	
+	@PostMapping("/customer")
+	public Mono<Customer> save() {
+		return customerRepository.save(new Customer("gildong", "Hong")).doOnNext(c-> {
+			sink.tryEmitNext(c); // 퍼블리셔 데이터가 하나 추가가 됨.
+		});
 	}
 	
 }
