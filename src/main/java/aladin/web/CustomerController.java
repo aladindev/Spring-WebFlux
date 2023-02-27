@@ -23,6 +23,10 @@ public class CustomerController {
 	private final Sinks.Many<Customer> sink;
 	
 	
+	// blocking vs Non-blocking
+	// RDBMS는 비동기 지원을 안해서 소스 코드가 리액티브해도 DB에서 event block을 당하기 때문에
+	// RDBMS 환경에서는 reactive web 사용이 불가능하다.
+	
 	/**
 	 * A요청 -> Flux -> Stream
 	 * B요청 -> Flux -> Stream
@@ -71,5 +75,4 @@ public class CustomerController {
 			sink.tryEmitNext(c); // 퍼블리셔 데이터가 하나 추가가 됨.
 		});
 	}
-	
 }
