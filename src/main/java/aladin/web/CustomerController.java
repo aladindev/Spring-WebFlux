@@ -30,7 +30,7 @@ public class CustomerController {
 	/**
 	 * A요청 -> Flux -> Stream
 	 * B요청 -> Flux -> Stream
-	 *   -> Flux.merge -> Sink
+	 *   -> Flux.merge -> Sink 
 	 * */
 	public CustomerController(CustomerRepository customerRepository) {
 		this.customerRepository = customerRepository;
