@@ -66,7 +66,6 @@ public class CustomerController {
 		return sink.asFlux().map(c-> ServerSentEvent.builder(c).build()).doOnCancel(() -> {
 			sink.asFlux().blockLast();
 		});
-		
 	}
 	
 	@PostMapping("/customer")
@@ -75,4 +74,10 @@ public class CustomerController {
 			sink.tryEmitNext(c); // 퍼블리셔 데이터가 하나 추가가 됨.
 		});
 	}
+
+	@GetMapping(value="/login")
+	public String login() {
+		return "login";
+	}
+	
 }
